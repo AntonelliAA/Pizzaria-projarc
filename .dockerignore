@@ -1,0 +1,19 @@
+# Ignora artefatos de build local — o Maven dentro do container fará o build
+target/
+out/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Diagramas e docs — não são necessários na imagem
+*.puml
+*.pdf
+README.md
+docker-compose.yml
