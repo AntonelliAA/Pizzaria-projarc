@@ -24,3 +24,7 @@ application:
   name: ex4-lancheriaddd-v1
 server:
   port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /docs

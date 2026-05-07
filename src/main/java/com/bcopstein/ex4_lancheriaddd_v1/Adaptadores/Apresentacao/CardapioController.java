@@ -17,8 +17,13 @@ import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.RecuperarCardapioUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.CardapioResponse;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Produto;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/cardapio")
+@Tag(name = "Cardápio", description = "Operações relacionadas aos cardápios da pizzaria")
 public class CardapioController {
     private RecuperarCardapioUC recuperaCardapioUC;
     private RecuperaListaCardapiosUC recuperaListaCardapioUC;
@@ -31,7 +36,13 @@ public class CardapioController {
 
     @GetMapping("/{id}")
     @CrossOrigin("*")
-    public CardapioPresenter recuperaCardapio(@PathVariable(value="id")long id){
+    @Operation(
+        summary = "Recuperar cardápio por ID",
+        description = "Retorna o cardápio completo com produtos e indicação de sugestões do chef"
+    )
+    public CardapioPresenter recuperaCardapio(
+            @Parameter(description = "ID do cardápio a ser recuperado", example = "1")
+            @PathVariable(value="id") long id) {
         CardapioResponse cardapioResponse = recuperaCardapioUC.run(id);
         Set<Long> conjIdSugestoes = new HashSet<>(cardapioResponse.getSugestoesDoChef().stream()
             .map(produto->produto.getId())
@@ -46,6 +57,10 @@ public class CardapioController {
 
     @GetMapping("/lista")
     @CrossOrigin("*")
+    @Operation(
+        summary = "Listar cardápios disponíveis",
+        description = "Retorna a lista de cabeçalhos de todos os cardápios cadastrados"
+    )
     public List<CabecalhoCardapioPresenter> recuperaListaCardapios(){
          List<CabecalhoCardapioPresenter> lstCardapios = 
             recuperaListaCardapioUC.run().cabecalhos().stream()
