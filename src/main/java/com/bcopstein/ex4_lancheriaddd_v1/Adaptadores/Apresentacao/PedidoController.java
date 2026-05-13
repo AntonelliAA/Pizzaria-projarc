@@ -65,7 +65,6 @@ public class PedidoController {
             return ResponseEntity.ok(resp);
         }
 
-        // Pedido negado por falta de estoque — não foi persistido
         List<String> indisponiveis = p.getItens().stream()
                 .filter(item -> !item.getItem().isDisponivel())
                 .map(item -> item.getItem().getDescricao())

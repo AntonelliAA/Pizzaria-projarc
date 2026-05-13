@@ -58,20 +58,14 @@ public class CriaPedidoUC {
     }
 
     public Pedido run(PedidoRequest req) {
-        // 1. Recupera e valida o cliente
         Cliente cliente = clientesRepo.recuperaPorCpf(req.getClienteCpf())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Cliente não encontrado: " + req.getClienteCpf()));
 
-        // 2. Monta os itens e valida produtos
         List<ItemPedido> itens = montaItens(req.getItens());
-
-        // 3. Verifica disponibilidade no estoque
         List<String> indisponiveis = verificaEstoque(itens);
 
         if (!indisponiveis.isEmpty()) {
-            // 3a. Itens sem estoque — marca produtos como indisponíveis no cardápio
-            //     e retorna o pedido SEM persistir (evita lixo no banco)
             marcarProdutosIndisponiveis(itens, indisponiveis);
 
             return new Pedido(
@@ -84,7 +78,6 @@ public class CriaPedidoUC {
             );
         }
 
-        // 3b. Estoque OK — calcula custo e aprova o pedido
         double valor = calculaValorBruto(itens);
         double desconto = descontosService.calculaDesconto(cliente, valor);
         double impostos = impostosService.calculaImposto(valor);
@@ -103,10 +96,6 @@ public class CriaPedidoUC {
         );
         return pedidosRepo.salva(pedidoAprovado);
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers privados
-    // -------------------------------------------------------------------------
 
     private List<ItemPedido> montaItens(List<ItemPedidoRequest> requests) {
         return requests.stream().map(ipr -> {

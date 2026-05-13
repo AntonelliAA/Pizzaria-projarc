@@ -7,13 +7,11 @@ public class PedidoResponse {
     private Long id;
     private String status;
 
-    // Campos financeiros — preenchidos quando status = APROVADO
     private double valor;
     private double impostos;
     private double desconto;
     private double valorCobrado;
 
-    // Itens sem estoque — preenchidos quando pedido é negado
     private List<String> itensIndisponiveis;
 
     public PedidoResponse() {}
