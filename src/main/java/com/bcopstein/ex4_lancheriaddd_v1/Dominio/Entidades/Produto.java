@@ -22,6 +22,7 @@ public class Produto {
     )
     private Receita receita;
     private int preco;
+    private boolean disponivel = true;
 
     public Produto() {}
 
@@ -36,6 +37,7 @@ public class Produto {
         this.descricao = descricao;
         this.receita = receita;
         this.preco = preco;
+        this.disponivel = true;
     }
 
     public long getId(){
@@ -52,6 +54,14 @@ public class Produto {
 
     public int getPreco() {
         return preco;
+    }
+
+    public boolean isDisponivel() {
+        return disponivel;
+    }
+
+    public void marcarComoIndisponivel() {
+        this.disponivel = false;
     }
 
     public void setPreco(int preco) {
