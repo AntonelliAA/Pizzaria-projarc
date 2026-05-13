@@ -1,11 +1,20 @@
 package com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "clientes")
 public class Cliente {
+    @Id
     private String cpf;
     private String nome;
     private String celular;
     private String endereco;
     private String email;
+
+    public Cliente() {}
 
     public Cliente(String cpf, String nome, String celular, String endereco, String email) {
         this.cpf = cpf;
