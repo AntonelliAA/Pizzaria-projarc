@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.CancelaPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ConsultaStatusPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.CriaPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.PedidoRequest;
@@ -35,10 +37,14 @@ public class PedidoController {
 
     private final CriaPedidoUC criaPedidoUC;
     private final ConsultaStatusPedidoUC consultaStatusPedidoUC;
+    private final CancelaPedidoUC cancelaPedidoUC;
 
-    public PedidoController(CriaPedidoUC criaPedidoUC, ConsultaStatusPedidoUC consultaStatusPedidoUC) {
+    public PedidoController(CriaPedidoUC criaPedidoUC,
+                            ConsultaStatusPedidoUC consultaStatusPedidoUC,
+                            CancelaPedidoUC cancelaPedidoUC) {
         this.criaPedidoUC = criaPedidoUC;
         this.consultaStatusPedidoUC = consultaStatusPedidoUC;
+        this.cancelaPedidoUC = cancelaPedidoUC;
     }
 
     /**
@@ -99,6 +105,28 @@ public class PedidoController {
             @Parameter(description = "ID do pedido", example = "1")
             @PathVariable Long id) {
         StatusPedidoResponse resp = consultaStatusPedidoUC.run(id);
+        return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * UC6 — Cancelar pedido aprovado.
+     * Só é possível cancelar pedidos com status APROVADO (não pagos).
+     */
+    @PutMapping("/{id}/cancelar")
+    @CrossOrigin("*")
+    @Operation(summary = "Cancelar pedido",
+               description = "Cancela um pedido aprovado. Pedidos pagos ou em outro status não podem ser cancelados.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Pedido cancelado com sucesso",
+                     content = @Content(schema = @Schema(implementation = StatusPedidoResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Pedido não encontrado"),
+        @ApiResponse(responseCode = "422", description = "Pedido não pode ser cancelado (status inválido)")
+    })
+    // TODO: proteger com autenticação (UC2)
+    public ResponseEntity<StatusPedidoResponse> cancelarPedido(
+            @Parameter(description = "ID do pedido a cancelar", example = "1")
+            @PathVariable Long id) {
+        StatusPedidoResponse resp = cancelaPedidoUC.run(id);
         return ResponseEntity.ok(resp);
     }
 }

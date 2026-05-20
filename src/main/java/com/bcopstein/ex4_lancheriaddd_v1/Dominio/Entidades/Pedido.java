@@ -22,6 +22,7 @@ public class Pedido {
     public enum Status {
         NOVO,
         APROVADO,
+        CANCELADO,
         PAGO,
         AGUARDANDO,
         PREPARACAO,

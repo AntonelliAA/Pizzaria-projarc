@@ -40,4 +40,14 @@ public class GlobalExceptionHandler {
                 "message", mensagem
         ));
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
+                "timestamp", LocalDateTime.now().toString(),
+                "status", 422,
+                "error", "Unprocessable Entity",
+                "message", ex.getMessage()
+        ));
+    }
 }

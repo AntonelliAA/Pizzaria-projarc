@@ -37,4 +37,12 @@ public interface PedidosRepository extends JpaRepository<Pedido, Long>,
     default long contaPedidosClienteNosUltimosDias(String cpf, int dias) {
         return contaPedidosClienteNoPeriodo(cpf, LocalDateTime.now().minusDays(dias));
     }
+
+    @Override
+    default void atualizaStatus(Long id, Pedido.Status novoStatus) {
+        findById(id).ifPresent(p -> {
+            p.setStatus(novoStatus);
+            save(p);
+        });
+    }
 }
