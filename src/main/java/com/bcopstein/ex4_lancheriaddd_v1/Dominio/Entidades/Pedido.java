@@ -42,8 +42,7 @@ public class Pedido {
 
     private String enderecoEntrega;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "pedido_id")
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemPedido> itens;
 
     @Enumerated(EnumType.STRING)
@@ -69,6 +68,10 @@ public class Pedido {
         this.impostos = impostos;
         this.desconto = desconto;
         this.valorCobrado = valorCobrado;
+        // Seta a referência inversa para que o JPA preencha pedido_id no INSERT
+        if (itens != null) {
+            itens.forEach(item -> item.setPedido(this));
+        }
     }
 
     public long getId() { return id; }
