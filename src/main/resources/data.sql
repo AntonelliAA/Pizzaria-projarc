@@ -9,9 +9,7 @@ INSERT INTO ingredientes (id, descricao) VALUES (3, 'Porcao de mussarela');
 INSERT INTO ingredientes (id, descricao) VALUES (4, 'Porcao de presunto');
 INSERT INTO ingredientes (id, descricao) VALUES (5, 'Porcao de calabresa');
 INSERT INTO ingredientes (id, descricao) VALUES (6, 'Molho de tomate (200ml)');
-INSERT INTO ingredientes (id, descricao) VALUES (7, 'Porcao de azeitona');
-INSERT INTO ingredientes (id, descricao) VALUES (8, 'Porcao de oregano');
-INSERT INTO ingredientes (id, descricao) VALUES (9, 'Porcao de cebola');
+INSERT INTO ingredientes (id, descricao) VALUES (7, 'Porcao de oregano');
 
 -- Inserção dos itens de estoque
 INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (1, 30, 1);
@@ -21,8 +19,6 @@ INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (4, 30, 4);
 INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (5, 30, 5);
 INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (6, 30, 6);
 INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (7, 30, 7);
-INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (8, 30, 8);
-INSERT INTO itensEstoque (id, quantidade, ingrediente_id) VALUES (9, 30, 9);
 
 -- Inserção das receitas 
 INSERT INTO receitas (id, titulo) VALUES (1, 'Pizza calabresa');
@@ -43,7 +39,7 @@ INSERT INTO receita_ingrediente (receita_id, ingrediente_id) VALUES (2, 4); -- P
 INSERT INTO receita_ingrediente (receita_id, ingrediente_id) VALUES (3, 1); -- Disco de pizza
 INSERT INTO receita_ingrediente (receita_id, ingrediente_id) VALUES (3, 6); -- Molho de tomate (200ml)
 INSERT INTO receita_ingrediente (receita_id, ingrediente_id) VALUES (3, 3); -- Porcao de mussarela
-INSERT INTO receita_ingrediente (receita_id, ingrediente_id) VALUES (3, 8); -- Porcao de cebola
+INSERT INTO receita_ingrediente (receita_id, ingrediente_id) VALUES (3, 7); -- Porcao de oregano
 
 -- insercao dos produtos
 INSERT INTO produtos (id,descricao,preco) VALUES (1,'Pizza calabresa',5500);
