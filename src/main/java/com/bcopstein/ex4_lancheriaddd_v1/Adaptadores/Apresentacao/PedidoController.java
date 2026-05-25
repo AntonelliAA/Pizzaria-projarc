@@ -114,9 +114,9 @@ public class PedidoController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Status do pedido retornado com sucesso",
                      content = @Content(schema = @Schema(implementation = StatusPedidoResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Pedido não encontrado")
+        @ApiResponse(responseCode = "400", description = "Pedido não encontrado"),
+        @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido")
     })
-    // TODO: proteger com autenticação (UC2)
     public ResponseEntity<StatusPedidoResponse> consultarStatus(
             @Parameter(description = "ID do pedido", example = "1")
             @PathVariable Long id) {
@@ -136,9 +136,9 @@ public class PedidoController {
         @ApiResponse(responseCode = "200", description = "Pedido cancelado com sucesso",
                      content = @Content(schema = @Schema(implementation = StatusPedidoResponse.class))),
         @ApiResponse(responseCode = "400", description = "Pedido não encontrado"),
-        @ApiResponse(responseCode = "422", description = "Pedido não pode ser cancelado (status inválido)")
+        @ApiResponse(responseCode = "422", description = "Pedido não pode ser cancelado (status inválido)"),
+        @ApiResponse(responseCode = "401", description = "Token de autenticação ausente ou inválido")
     })
-    // TODO: proteger com autenticação (UC2)
     public ResponseEntity<StatusPedidoResponse> cancelarPedido(
             @Parameter(description = "ID do pedido a cancelar", example = "1")
             @PathVariable Long id) {
