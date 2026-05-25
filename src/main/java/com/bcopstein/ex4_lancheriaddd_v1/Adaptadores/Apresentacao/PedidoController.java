@@ -1,8 +1,10 @@
 package com.bcopstein.ex4_lancheriaddd_v1.Adaptadores.Apresentacao;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,13 +13,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.CancelaPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ConsultaStatusPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.CriaPedidoUC;
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ListaPedidosEntreguesClienteUC;
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ListaPedidosEntreguesUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.PagarPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.PedidoRequest;
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.PedidoEntregueResponse;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.PedidoResponse;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.StatusPedidoResponse;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
@@ -40,15 +46,21 @@ public class PedidoController {
     private final ConsultaStatusPedidoUC consultaStatusPedidoUC;
     private final CancelaPedidoUC cancelaPedidoUC;
     private final PagarPedidoUC pagarPedidoUC;
+    private final ListaPedidosEntreguesUC listaPedidosEntreguesUC;
+    private final ListaPedidosEntreguesClienteUC listaPedidosEntreguesClienteUC;
 
     public PedidoController(CriaPedidoUC criaPedidoUC,
                             ConsultaStatusPedidoUC consultaStatusPedidoUC,
                             CancelaPedidoUC cancelaPedidoUC,
-                            PagarPedidoUC pagarPedidoUC) {
+                            PagarPedidoUC pagarPedidoUC,
+                            ListaPedidosEntreguesUC listaPedidosEntreguesUC,
+                            ListaPedidosEntreguesClienteUC listaPedidosEntreguesClienteUC) {
         this.criaPedidoUC = criaPedidoUC;
         this.consultaStatusPedidoUC = consultaStatusPedidoUC;
         this.cancelaPedidoUC = cancelaPedidoUC;
         this.pagarPedidoUC = pagarPedidoUC;
+        this.listaPedidosEntreguesUC = listaPedidosEntreguesUC;
+        this.listaPedidosEntreguesClienteUC = listaPedidosEntreguesClienteUC;
     }
 
     /**
@@ -152,6 +164,58 @@ public class PedidoController {
             @Parameter(description = "ID do pedido a pagar", example = "1")
             @PathVariable Long id) {
         StatusPedidoResponse resp = pagarPedidoUC.run(id);
+        return ResponseEntity.ok(resp);
+    }
+
+    // ─── UC8 — Listar pedidos entregues entre duas datas ────────────────
+
+    /**
+     * UC8 — Listar pedidos entregues entre duas datas.
+     * Retorna todos os pedidos com status ENTREGUE no intervalo informado.
+     */
+    @GetMapping("/entregues")
+    @CrossOrigin("*")
+    @Operation(summary = "Listar pedidos entregues entre datas",
+               description = "Retorna todos os pedidos com status ENTREGUE cujas datas de criação " +
+                             "estejam no intervalo [inicio, fim]. Formato: yyyy-MM-ddTHH:mm:ss")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de pedidos entregues retornada com sucesso"),
+        @ApiResponse(responseCode = "400", description = "Parâmetros de data inválidos")
+    })
+    public ResponseEntity<List<PedidoEntregueResponse>> listarEntregues(
+            @Parameter(description = "Data/hora de início (ISO)", example = "2026-01-01T00:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+            @Parameter(description = "Data/hora de fim (ISO)", example = "2026-12-31T23:59:59")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+
+        List<PedidoEntregueResponse> resp = listaPedidosEntreguesUC.run(inicio, fim);
+        return ResponseEntity.ok(resp);
+    }
+
+    // ─── UC9 — Listar pedidos de um cliente entregues entre duas datas ──
+
+    /**
+     * UC9 — Listar pedidos de um cliente entregues entre duas datas.
+     * Retorna os pedidos entregues do cliente identificado pelo CPF no intervalo informado.
+     */
+    @GetMapping("/entregues/{cpf}")
+    @CrossOrigin("*")
+    @Operation(summary = "Listar pedidos entregues de um cliente entre datas",
+               description = "Retorna os pedidos com status ENTREGUE do cliente identificado pelo CPF, " +
+                             "cujas datas de criação estejam no intervalo [inicio, fim]. Formato: yyyy-MM-ddTHH:mm:ss")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de pedidos entregues do cliente retornada com sucesso"),
+        @ApiResponse(responseCode = "400", description = "Cliente não encontrado ou parâmetros inválidos")
+    })
+    public ResponseEntity<List<PedidoEntregueResponse>> listarEntreguesCliente(
+            @Parameter(description = "CPF do cliente", example = "9001")
+            @PathVariable String cpf,
+            @Parameter(description = "Data/hora de início (ISO)", example = "2026-01-01T00:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
+            @Parameter(description = "Data/hora de fim (ISO)", example = "2026-12-31T23:59:59")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim) {
+
+        List<PedidoEntregueResponse> resp = listaPedidosEntreguesClienteUC.run(cpf, inicio, fim);
         return ResponseEntity.ok(resp);
     }
 }

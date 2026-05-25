@@ -66,3 +66,26 @@ INSERT INTO cardapio_produto (cardapio_id,produto_id) VALUES (1,3);
 
 INSERT INTO cardapio_produto (cardapio_id,produto_id) VALUES (2,1);
 INSERT INTO cardapio_produto (cardapio_id,produto_id) VALUES (2,3);
+
+-- ─── Pedidos entregues para testes de UC8 e UC9 ───────────────────────
+INSERT INTO pedidos (id, cliente_cpf, data_hora_criacao, endereco_entrega, status, valor, impostos, desconto, valor_cobrado)
+VALUES (1, '9001', TIMESTAMP '2026-05-20 18:30:00', 'Rua das Flores, 100', 'ENTREGUE', 11000, 1100, 0, 12100);
+
+INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade)
+VALUES (1, 1, 1, 2);
+
+INSERT INTO pedidos (id, cliente_cpf, data_hora_criacao, endereco_entrega, status, valor, impostos, desconto, valor_cobrado)
+VALUES (2, '9001', TIMESTAMP '2026-05-22 20:15:00', 'Rua das Flores, 100', 'ENTREGUE', 6000, 600, 0, 6600);
+
+INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade)
+VALUES (2, 2, 2, 1);
+
+INSERT INTO pedidos (id, cliente_cpf, data_hora_criacao, endereco_entrega, status, valor, impostos, desconto, valor_cobrado)
+VALUES (3, '9002', TIMESTAMP '2026-05-21 12:00:00', 'Av. Central, 200', 'ENTREGUE', 4000, 400, 0, 4400);
+
+INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade)
+VALUES (3, 3, 3, 1);
+
+-- Ajuste de sequências para evitar colisões com IDs inseridos manualmente
+ALTER TABLE pedidos ALTER COLUMN id RESTART WITH 100;
+ALTER TABLE itens_pedido ALTER COLUMN id RESTART WITH 100;
