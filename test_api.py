@@ -507,6 +507,87 @@ def main():
             ]
         )
 
+    # ─────────────────────────────────────────────────────────
+    section("9. PAGAMENTO E SIMULAÇÃO DE ESTADOS (UC7)")
+    # ─────────────────────────────────────────────────────────
+
+    # Criar um novo pedido para testar o fluxo de pagamento completo
+    pedido_pag_body = {
+        "clienteCpf": "9001",
+        "enderecoEntrega": "Rua do Pagamento, 99",
+        "itens": [
+            {"produtoId": 1, "quantidade": 1}
+        ]
+    }
+
+    pedido_pag = test(
+        "POST /pedidos — Criar pedido para UC7",
+        "POST", "/pedidos",
+        body=pedido_pag_body,
+        checks=[
+            ("Status é APROVADO", lambda d: d.get("status") == "APROVADO"),
+        ]
+    )
+
+    pedido_pag_id = pedido_pag.get("id") if pedido_pag else None
+
+    if pedido_pag_id:
+        # Pagar pedido → deve retornar status PAGO
+        test(
+            f"PUT /pedidos/{pedido_pag_id}/pagar — Efetuar pagamento",
+            "PUT", f"/pedidos/{pedido_pag_id}/pagar",
+            expected_status=200,
+            checks=[
+                ("Status é PAGO", lambda d: d.get("status") == "PAGO"),
+                ("ID confere", lambda d: d.get("id") == pedido_pag_id),
+            ]
+        )
+
+        # Tentar pagar novamente → deve falhar com 422
+        test(
+            f"PUT /pedidos/{pedido_pag_id}/pagar — Pagar novamente (deve falhar)",
+            "PUT", f"/pedidos/{pedido_pag_id}/pagar",
+            expected_status=422,
+            description="Pedido já pago não pode ser pago novamente"
+        )
+
+        # Tentar cancelar pedido pago → deve falhar com 422
+        test(
+            f"PUT /pedidos/{pedido_pag_id}/cancelar — Cancelar pedido pago (deve falhar)",
+            "PUT", f"/pedidos/{pedido_pag_id}/cancelar",
+            expected_status=422,
+            description="Pedido pago não pode ser cancelado"
+        )
+
+        # Acompanhar a simulação assíncrona com polling resiliente
+        # Esperado: 2s -> AGUARDANDO, 4s -> PREPARACAO, 6s -> PRONTO, 8s -> TRANSPORTE, 10s -> ENTREGUE
+        estados_esperados = ["AGUARDANDO", "PREPARACAO", "PRONTO", "TRANSPORTE", "ENTREGUE"]
+        
+        print("       ↳ Monitorando transições de status assíncronas...")
+        for i, estado in enumerate(estados_esperados):
+            alcançado = False
+            for _ in range(40):  # até 8 segundos por estado (40 * 0.2s)
+                resp = requests.get(f"{BASE_URL}/pedidos/{pedido_pag_id}/status")
+                if resp.status_code == 200:
+                    status_atual = resp.json().get("status")
+                    if status_atual == estado or (status_atual in estados_esperados and estados_esperados.index(status_atual) > i):
+                        alcançado = True
+                        break
+                time.sleep(0.2)
+                
+            test(
+                f"GET /pedidos/{pedido_pag_id}/status — Verificando estado: {estado}",
+                "GET", f"/pedidos/{pedido_pag_id}/status",
+                checks=[
+                    (f"Status atingiu/passou por {estado}", 
+                     lambda d, exp=estado, idx=i: d.get("status") == exp or (d.get("status") in estados_esperados and estados_esperados.index(d.get("status")) > idx)),
+                ]
+            )
+            
+        print(f"       ↳ Fluxo de simulação concluído com sucesso!")
+    else:
+        print(f"{C.YELLOW}  ⚠ Testes de UC7 pulados — pedido de teste não foi criado{C.RESET}")
+
     # ==========================================================
     #  RELATÓRIO FINAL
     # ==========================================================

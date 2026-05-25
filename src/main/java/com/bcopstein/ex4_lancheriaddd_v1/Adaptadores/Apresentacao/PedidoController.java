@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.CancelaPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ConsultaStatusPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.CriaPedidoUC;
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.PagarPedidoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.PedidoRequest;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.PedidoResponse;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.StatusPedidoResponse;
@@ -38,13 +39,16 @@ public class PedidoController {
     private final CriaPedidoUC criaPedidoUC;
     private final ConsultaStatusPedidoUC consultaStatusPedidoUC;
     private final CancelaPedidoUC cancelaPedidoUC;
+    private final PagarPedidoUC pagarPedidoUC;
 
     public PedidoController(CriaPedidoUC criaPedidoUC,
                             ConsultaStatusPedidoUC consultaStatusPedidoUC,
-                            CancelaPedidoUC cancelaPedidoUC) {
+                            CancelaPedidoUC cancelaPedidoUC,
+                            PagarPedidoUC pagarPedidoUC) {
         this.criaPedidoUC = criaPedidoUC;
         this.consultaStatusPedidoUC = consultaStatusPedidoUC;
         this.cancelaPedidoUC = cancelaPedidoUC;
+        this.pagarPedidoUC = pagarPedidoUC;
     }
 
     /**
@@ -127,6 +131,27 @@ public class PedidoController {
             @Parameter(description = "ID do pedido a cancelar", example = "1")
             @PathVariable Long id) {
         StatusPedidoResponse resp = cancelaPedidoUC.run(id);
+        return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * UC7 — Pagar pedido.
+     * Só é possível pagar pedidos com status APROVADO.
+     */
+    @PutMapping("/{id}/pagar")
+    @CrossOrigin("*")
+    @Operation(summary = "Pagar pedido",
+               description = "Processa o pagamento de um pedido aprovado e o envia para a cozinha.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Pedido pago com sucesso",
+                     content = @Content(schema = @Schema(implementation = StatusPedidoResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Pedido não encontrado"),
+        @ApiResponse(responseCode = "422", description = "Pedido não pode ser pago (status inválido)")
+    })
+    public ResponseEntity<StatusPedidoResponse> pagarPedido(
+            @Parameter(description = "ID do pedido a pagar", example = "1")
+            @PathVariable Long id) {
+        StatusPedidoResponse resp = pagarPedidoUC.run(id);
         return ResponseEntity.ok(resp);
     }
 }
