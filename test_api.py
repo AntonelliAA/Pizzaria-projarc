@@ -53,7 +53,8 @@ def test(name: str, method: str, path: str, *,
          body: dict = None,
          expected_status: int = 200,
          checks: list = None,
-         description: str = ""):
+         description: str = "",
+         timeout: int = 10):
     """
     Executa um teste HTTP e valida o resultado.
 
@@ -68,13 +69,13 @@ def test(name: str, method: str, path: str, *,
 
     try:
         if method == "GET":
-            resp = requests.get(url, timeout=10)
+            resp = requests.get(url, timeout=timeout)
         elif method == "POST":
-            resp = requests.post(url, json=body, timeout=10)
+            resp = requests.post(url, json=body, timeout=timeout)
         elif method == "PUT":
-            resp = requests.put(url, json=body, timeout=10)
+            resp = requests.put(url, json=body, timeout=timeout)
         elif method == "DELETE":
-            resp = requests.delete(url, timeout=10)
+            resp = requests.delete(url, timeout=timeout)
         else:
             raise ValueError(f"Método HTTP desconhecido: {method}")
 
@@ -156,7 +157,124 @@ def main():
     )
 
     # ─────────────────────────────────────────────────────────
-    section("2. CARDÁPIO — Listar e recuperar (UC3)")
+    section("2. UC1 — Registrar Cliente")
+    # ─────────────────────────────────────────────────────────
+
+    # Use timestamp to generate unique CPF/email for each test run
+    ts = str(int(time.time()))[-6:]
+    cpf_novo = f"T{ts}"
+    email_novo = f"teste.{ts}@email.com"
+
+    cliente_body = {
+        "nome": "Teste Automatico",
+        "cpf": cpf_novo,
+        "celular": "51999999999",
+        "endereco": "Rua Automática, 1",
+        "email": email_novo,
+        "senha": "senha123"
+    }
+
+    cliente_reg = test(
+        "POST /clientes — Registrar novo cliente",
+        "POST", "/clientes",
+        body=cliente_body,
+        expected_status=201,
+        timeout=30,  # BCrypt pode ser lento na primeira chamada (JVM fria)
+        checks=[
+            ("Retorna o CPF do cliente", lambda d: d.get("cpf") == cpf_novo),
+            ("Retorna o nome do cliente", lambda d: d.get("nome") == "Teste Automatico"),
+        ],
+        description="Cadastra um novo cliente com CPF único gerado por timestamp"
+    )
+
+    if cliente_reg:
+        print(f"{C.DIM}       ↳ Cliente registrado: CPF={cliente_reg.get('cpf')}, "
+              f"nome={cliente_reg.get('nome')}{C.RESET}")
+
+    # Tentar registrar o mesmo CPF novamente → deve falhar com 400
+    test(
+        "POST /clientes — CPF duplicado (deve falhar com 400)",
+        "POST", "/clientes",
+        body=cliente_body,
+        expected_status=400,
+        timeout=30,
+        description="Tentar cadastrar CPF já existente deve retornar 400"
+    )
+
+    # Dados inválidos (sem nome) → validação bean → 400
+    test(
+        "POST /clientes — Dados inválidos (sem nome) → 400",
+        "POST", "/clientes",
+        body={"cpf": "X999", "celular": "51988", "endereco": "X", "email": "x@y.com", "senha": "s"},
+        expected_status=400,
+        description="Body sem campo 'nome' deve retornar 400 (validação)"
+    )
+
+    # ─────────────────────────────────────────────────────────
+    section("3. UC2 — Autenticar Cliente")
+    # ─────────────────────────────────────────────────────────
+
+    auth_resp = test(
+        "POST /auth — Autenticar com credenciais válidas",
+        "POST", "/auth",
+        body={"email": email_novo, "senha": "senha123"},
+        expected_status=200,
+        checks=[
+            ("Retorna token",  lambda d: d.get("token") is not None and len(d.get("token", "")) > 0),
+            ("Retorna CPF",    lambda d: d.get("cpf") == cpf_novo),
+            ("Retorna email",  lambda d: d.get("email") == email_novo),
+        ],
+        description="Deve retornar token, CPF e e-mail do cliente autenticado"
+    )
+
+    if auth_resp:
+        print(f"{C.DIM}       ↳ Token: {auth_resp.get('token', '')[:20]}...{C.RESET}")
+
+    # Autenticar com credenciais inválidas → 400
+    test(
+        "POST /auth — Senha incorreta → 400",
+        "POST", "/auth",
+        body={"email": email_novo, "senha": "senhaErrada"},
+        expected_status=400,
+        description="Senha incorreta deve retornar 400"
+    )
+
+    # Autenticar com e-mail inexistente → 400
+    test(
+        "POST /auth — E-mail inexistente → 400",
+        "POST", "/auth",
+        body={"email": "naoexiste@email.com", "senha": "qualquer"},
+        expected_status=400,
+        description="E-mail não cadastrado deve retornar 400"
+    )
+
+    # Autenticar clientes pré-existentes (data.sql) usando senha plain-text
+    auth_9001 = test(
+        "POST /auth — Autenticar cliente 9001 (huguinho.pato@email.com)",
+        "POST", "/auth",
+        body={"email": "huguinho.pato@email.com", "senha": "senha"},
+        expected_status=200,
+        checks=[
+            ("Retorna token", lambda d: d.get("token") is not None),
+            ("CPF correto",   lambda d: d.get("cpf") == "9001"),
+        ],
+        description="Cliente pré-existente com senha em plain-text deve autenticar"
+    )
+
+    auth_9002 = test(
+        "POST /auth — Autenticar cliente 9002 (zezinho.pato@email.com)",
+        "POST", "/auth",
+        body={"email": "zezinho.pato@email.com", "senha": "senha"},
+        expected_status=200,
+        checks=[
+            ("Retorna token", lambda d: d.get("token") is not None),
+            ("CPF correto",   lambda d: d.get("cpf") == "9002"),
+        ],
+        description="Segundo cliente pré-existente deve autenticar"
+    )
+
+    # ─────────────────────────────────────────────────────────
+    section("4. CARDÁPIO — Listar e recuperar (UC3)")
     # ─────────────────────────────────────────────────────────
 
     lista = test(
@@ -193,7 +311,7 @@ def main():
     )
 
     # ─────────────────────────────────────────────────────────
-    section("3. PEDIDO — Submissão para aprovação (UC4)")
+    section("5. PEDIDO — Submissão para aprovação (UC4)")
     # ─────────────────────────────────────────────────────────
 
     pedido_body = {
@@ -263,7 +381,7 @@ def main():
     )
 
     # ─────────────────────────────────────────────────────────
-    section("4. STATUS DO PEDIDO (UC5)")
+    section("6. STATUS DO PEDIDO (UC5)")
     # ─────────────────────────────────────────────────────────
 
     if pedido_id:
@@ -293,7 +411,7 @@ def main():
     )
 
     # ─────────────────────────────────────────────────────────
-    section("5. CANCELAMENTO DE PEDIDO (UC6)")
+    section("7. CANCELAMENTO DE PEDIDO (UC6)")
     # ─────────────────────────────────────────────────────────
 
     if pedido_id:
@@ -338,7 +456,7 @@ def main():
     )
 
     # ─────────────────────────────────────────────────────────
-    section("6. FLUXO COMPLETO — Novo pedido + consulta + cancela")
+    section("8. FLUXO COMPLETO — Novo pedido + consulta + cancela")
     # ─────────────────────────────────────────────────────────
 
     # Criar outro pedido com o segundo cliente
