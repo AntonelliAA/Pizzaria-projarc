@@ -54,28 +54,31 @@ def test(name: str, method: str, path: str, *,
          expected_status: int = 200,
          checks: list = None,
          description: str = "",
-         timeout: int = 10):
+         timeout: int = 10,
+         token: str = None):
     """
     Executa um teste HTTP e valida o resultado.
 
     checks: lista de tuplas (descricao, funcao_lambda_sobre_json)
             ex: [("status é APROVADO", lambda j: j["status"] == "APROVADO")]
+    token:  se informado, envia "Authorization: Bearer <token>"
     """
     global total, passed, failed
 
     total += 1
     url = f"{BASE_URL}{path}"
     prefix = f"  [{total:02d}] {name}"
+    headers = {"Authorization": f"Bearer {token}"} if token else None
 
     try:
         if method == "GET":
-            resp = requests.get(url, timeout=timeout)
+            resp = requests.get(url, timeout=timeout, headers=headers)
         elif method == "POST":
-            resp = requests.post(url, json=body, timeout=timeout)
+            resp = requests.post(url, json=body, timeout=timeout, headers=headers)
         elif method == "PUT":
-            resp = requests.put(url, json=body, timeout=timeout)
+            resp = requests.put(url, json=body, timeout=timeout, headers=headers)
         elif method == "DELETE":
-            resp = requests.delete(url, timeout=timeout)
+            resp = requests.delete(url, timeout=timeout, headers=headers)
         else:
             raise ValueError(f"Método HTTP desconhecido: {method}")
 
@@ -273,13 +276,33 @@ def main():
         description="Segundo cliente pré-existente deve autenticar"
     )
 
+    # Token de sessão usado em todos os endpoints protegidos (UC3–UC7)
+    TOKEN = auth_9001["token"] if auth_9001 else None
+
     # ─────────────────────────────────────────────────────────
     section("4. CARDÁPIO — Listar e recuperar (UC3)")
     # ─────────────────────────────────────────────────────────
 
+    # Sanity checks de autenticação no cardápio
+    test(
+        "GET /cardapio/1 — Sem token → 401",
+        "GET", "/cardapio/1",
+        expected_status=401,
+        description="Endpoint protegido deve recusar requisição sem Bearer token"
+    )
+
+    test(
+        "GET /cardapio/1 — Token inválido → 401",
+        "GET", "/cardapio/1",
+        expected_status=401,
+        token="token-falsificado-zzz",
+        description="Token não emitido pelo servidor deve ser rejeitado"
+    )
+
     lista = test(
         "GET /cardapio/lista — Lista de cardápios",
         "GET", "/cardapio/lista",
+        token=TOKEN,
         checks=[
             ("Retorna uma lista não-vazia", lambda d: isinstance(d, list) and len(d) > 0),
             ("Cada item tem id e titulo",
@@ -290,6 +313,7 @@ def main():
     cardapio = test(
         "GET /cardapio/1 — Cardápio corrente",
         "GET", "/cardapio/1",
+        token=TOKEN,
         checks=[
             ("Possui título",     lambda d: "titulo" in d and d["titulo"]),
             ("Possui lista de itens", lambda d: "itens" in d and len(d["itens"]) > 0),
@@ -307,6 +331,7 @@ def main():
         "GET /cardapio/999 — Cardápio inexistente",
         "GET", "/cardapio/999",
         expected_status=500,
+        token=TOKEN,
         description="Espera erro ao buscar cardápio que não existe"
     )
 
@@ -323,10 +348,20 @@ def main():
         ]
     }
 
+    # Sanity check de auth para POST /pedidos
+    test(
+        "POST /pedidos — Sem token → 401",
+        "POST", "/pedidos",
+        body=pedido_body,
+        expected_status=401,
+        description="Submissão de pedido sem Bearer token deve retornar 401"
+    )
+
     pedido = test(
         "POST /pedidos — Criar pedido (cliente 9001)",
         "POST", "/pedidos",
         body=pedido_body,
+        token=TOKEN,
         checks=[
             ("Status é APROVADO",  lambda d: d.get("status") == "APROVADO"),
             ("Possui id",          lambda d: d.get("id") is not None),
@@ -351,6 +386,7 @@ def main():
         "POST", "/pedidos",
         body={"clienteCpf": "9001", "enderecoEntrega": "Rua X", "itens": []},
         expected_status=400,
+        token=TOKEN,
         description="Body com lista de itens validação vazia deve retornar 400"
     )
 
@@ -364,6 +400,7 @@ def main():
             "itens": [{"produtoId": 1, "quantidade": 1}]
         },
         expected_status=400,
+        token=TOKEN,
         description="CPF que não existe no banco deve retornar 400"
     )
 
@@ -377,6 +414,7 @@ def main():
             "itens": [{"produtoId": 999, "quantidade": 1}]
         },
         expected_status=400,
+        token=TOKEN,
         description="Produto que não existe deve retornar 400"
     )
 
@@ -388,6 +426,7 @@ def main():
         status_resp = test(
             f"GET /pedidos/{pedido_id}/status — Status do pedido criado",
             "GET", f"/pedidos/{pedido_id}/status",
+            token=TOKEN,
             checks=[
                 ("Status é APROVADO",       lambda d: d.get("status") == "APROVADO"),
                 ("Possui dataHoraCriacao",   lambda d: d.get("dataHoraCriacao") is not None),
@@ -407,6 +446,7 @@ def main():
         "GET /pedidos/99999/status — Pedido inexistente",
         "GET", "/pedidos/99999/status",
         expected_status=400,
+        token=TOKEN,
         description="Pedido inexistente deve retornar 400"
     )
 
@@ -419,6 +459,7 @@ def main():
         cancel_resp = test(
             f"PUT /pedidos/{pedido_id}/cancelar — Cancelar pedido aprovado",
             "PUT", f"/pedidos/{pedido_id}/cancelar",
+            token=TOKEN,
             checks=[
                 ("Status é CANCELADO", lambda d: d.get("status") == "CANCELADO"),
                 ("ID confere",         lambda d: d.get("id") == pedido_id),
@@ -432,6 +473,7 @@ def main():
         test(
             f"GET /pedidos/{pedido_id}/status — Confirmar cancelamento",
             "GET", f"/pedidos/{pedido_id}/status",
+            token=TOKEN,
             checks=[
                 ("Status agora é CANCELADO", lambda d: d.get("status") == "CANCELADO"),
             ],
@@ -443,6 +485,7 @@ def main():
             f"PUT /pedidos/{pedido_id}/cancelar — Cancelar novamente (deve falhar)",
             "PUT", f"/pedidos/{pedido_id}/cancelar",
             expected_status=422,
+            token=TOKEN,
             description="Pedido já cancelado não pode ser cancelado novamente"
         )
     else:
@@ -452,6 +495,7 @@ def main():
         "PUT /pedidos/99999/cancelar — Cancelar pedido inexistente",
         "PUT", "/pedidos/99999/cancelar",
         expected_status=400,
+        token=TOKEN,
         description="Pedido inexistente deve retornar 400"
     )
 
@@ -468,10 +512,13 @@ def main():
         ]
     }
 
+    TOKEN_9002 = auth_9002["token"] if auth_9002 else None
+
     pedido2 = test(
         "POST /pedidos — Criar pedido (cliente 9002)",
         "POST", "/pedidos",
         body=pedido2_body,
+        token=TOKEN_9002,
         checks=[
             ("Status é APROVADO", lambda d: d.get("status") == "APROVADO"),
         ]
@@ -484,6 +531,7 @@ def main():
         test(
             f"GET /pedidos/{pedido2_id}/status — Status do 2o pedido",
             "GET", f"/pedidos/{pedido2_id}/status",
+            token=TOKEN_9002,
             checks=[
                 ("Status é APROVADO", lambda d: d.get("status") == "APROVADO"),
             ]
@@ -493,6 +541,7 @@ def main():
         test(
             f"PUT /pedidos/{pedido2_id}/cancelar — Cancelar 2o pedido",
             "PUT", f"/pedidos/{pedido2_id}/cancelar",
+            token=TOKEN_9002,
             checks=[
                 ("Status é CANCELADO", lambda d: d.get("status") == "CANCELADO"),
             ]
@@ -502,6 +551,7 @@ def main():
         test(
             f"GET /pedidos/{pedido2_id}/status — Status final do 2o pedido",
             "GET", f"/pedidos/{pedido2_id}/status",
+            token=TOKEN_9002,
             checks=[
                 ("Status é CANCELADO", lambda d: d.get("status") == "CANCELADO"),
             ]
@@ -524,6 +574,7 @@ def main():
         "POST /pedidos — Criar pedido para UC7",
         "POST", "/pedidos",
         body=pedido_pag_body,
+        token=TOKEN,
         checks=[
             ("Status é APROVADO", lambda d: d.get("status") == "APROVADO"),
         ]
@@ -537,6 +588,7 @@ def main():
             f"PUT /pedidos/{pedido_pag_id}/pagar — Efetuar pagamento",
             "PUT", f"/pedidos/{pedido_pag_id}/pagar",
             expected_status=200,
+            token=TOKEN,
             checks=[
                 ("Status é PAGO", lambda d: d.get("status") == "PAGO"),
                 ("ID confere", lambda d: d.get("id") == pedido_pag_id),
@@ -548,6 +600,7 @@ def main():
             f"PUT /pedidos/{pedido_pag_id}/pagar — Pagar novamente (deve falhar)",
             "PUT", f"/pedidos/{pedido_pag_id}/pagar",
             expected_status=422,
+            token=TOKEN,
             description="Pedido já pago não pode ser pago novamente"
         )
 
@@ -556,37 +609,109 @@ def main():
             f"PUT /pedidos/{pedido_pag_id}/cancelar — Cancelar pedido pago (deve falhar)",
             "PUT", f"/pedidos/{pedido_pag_id}/cancelar",
             expected_status=422,
+            token=TOKEN,
             description="Pedido pago não pode ser cancelado"
         )
 
         # Acompanhar a simulação assíncrona com polling resiliente
         # Esperado: 2s -> AGUARDANDO, 4s -> PREPARACAO, 6s -> PRONTO, 8s -> TRANSPORTE, 10s -> ENTREGUE
         estados_esperados = ["AGUARDANDO", "PREPARACAO", "PRONTO", "TRANSPORTE", "ENTREGUE"]
-        
+        auth_headers = {"Authorization": f"Bearer {TOKEN}"} if TOKEN else None
+
         print("       ↳ Monitorando transições de status assíncronas...")
         for i, estado in enumerate(estados_esperados):
             alcançado = False
             for _ in range(40):  # até 8 segundos por estado (40 * 0.2s)
-                resp = requests.get(f"{BASE_URL}/pedidos/{pedido_pag_id}/status")
+                resp = requests.get(f"{BASE_URL}/pedidos/{pedido_pag_id}/status", headers=auth_headers)
                 if resp.status_code == 200:
                     status_atual = resp.json().get("status")
                     if status_atual == estado or (status_atual in estados_esperados and estados_esperados.index(status_atual) > i):
                         alcançado = True
                         break
                 time.sleep(0.2)
-                
+
             test(
                 f"GET /pedidos/{pedido_pag_id}/status — Verificando estado: {estado}",
                 "GET", f"/pedidos/{pedido_pag_id}/status",
+                token=TOKEN,
                 checks=[
-                    (f"Status atingiu/passou por {estado}", 
+                    (f"Status atingiu/passou por {estado}",
                      lambda d, exp=estado, idx=i: d.get("status") == exp or (d.get("status") in estados_esperados and estados_esperados.index(d.get("status")) > idx)),
                 ]
             )
-            
+
         print(f"       ↳ Fluxo de simulação concluído com sucesso!")
     else:
         print(f"{C.YELLOW}  ⚠ Testes de UC7 pulados — pedido de teste não foi criado{C.RESET}")
+
+    # ─────────────────────────────────────────────────────────
+    section("10. UC8 — Listar pedidos entregues entre datas")
+    # ─────────────────────────────────────────────────────────
+
+    # data.sql semeia 3 pedidos ENTREGUE em 2026-05-20 / 21 / 22
+    entregues_all = test(
+        "GET /pedidos/entregues — Intervalo cobrindo todos os seeds",
+        "GET", "/pedidos/entregues?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
+        checks=[
+            ("Retorna lista", lambda d: isinstance(d, list)),
+            ("Inclui os 3 pedidos seed", lambda d: len(d) >= 3),
+            ("Todos os itens têm id e cliente",
+             lambda d: all(p.get("id") and p.get("clienteCpf") for p in d)),
+        ]
+    )
+
+    if entregues_all:
+        print(f"{C.DIM}       ↳ {len(entregues_all)} pedido(s) entregue(s) no intervalo{C.RESET}")
+
+    test(
+        "GET /pedidos/entregues — Intervalo vazio (datas no futuro)",
+        "GET", "/pedidos/entregues?inicio=2099-01-01T00:00:00&fim=2099-12-31T23:59:59",
+        checks=[
+            ("Lista vazia", lambda d: isinstance(d, list) and len(d) == 0),
+        ]
+    )
+
+    test(
+        "GET /pedidos/entregues — Parâmetro de data inválido → 400",
+        "GET", "/pedidos/entregues?inicio=data-ruim&fim=2026-12-31T23:59:59",
+        expected_status=400,
+        description="Data fora do formato ISO deve retornar 400"
+    )
+
+    # ─────────────────────────────────────────────────────────
+    section("11. UC9 — Listar pedidos entregues de um cliente")
+    # ─────────────────────────────────────────────────────────
+
+    entregues_9001 = test(
+        "GET /pedidos/entregues/9001 — Pedidos entregues do cliente 9001",
+        "GET", "/pedidos/entregues/9001?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
+        checks=[
+            ("Retorna lista", lambda d: isinstance(d, list)),
+            ("Cliente 9001 tem 2 pedidos seed entregues", lambda d: len(d) >= 2),
+            ("Todos os pedidos têm itens",
+             lambda d: all(p.get("itens") and len(p["itens"]) > 0 for p in d)),
+        ]
+    )
+
+    if entregues_9001:
+        print(f"{C.DIM}       ↳ {len(entregues_9001)} pedido(s) entregue(s) do cliente 9001{C.RESET}")
+
+    test(
+        "GET /pedidos/entregues/9002 — Pedidos entregues do cliente 9002",
+        "GET", "/pedidos/entregues/9002?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
+        checks=[
+            ("Cliente 9002 tem 1 pedido seed entregue", lambda d: len(d) >= 1),
+            ("Todos os pedidos têm itens",
+             lambda d: all(p.get("itens") and len(p["itens"]) > 0 for p in d)),
+        ]
+    )
+
+    test(
+        "GET /pedidos/entregues/0000 — Cliente inexistente → 400",
+        "GET", "/pedidos/entregues/0000?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
+        expected_status=400,
+        description="CPF não cadastrado deve retornar 400"
+    )
 
     # ==========================================================
     #  RELATÓRIO FINAL
