@@ -3,7 +3,11 @@
 Trabalho final da disciplina **Projeto e Arquitetura de Software (PAS) — 2026/1**.
 Sistema de pedidos online para uma pizzaria, implementado em Spring Boot 3 + Java 21 com arquitetura limpa (Clean Architecture) em 3 camadas.
 
-> 📄 O enunciado original do trabalho está em [enunciado.md](enunciado.md).
+O trabalho tem duas partes:
+- **Parte 1 (concluída):** o monólito com Clean Architecture descrito abaixo.
+- **Parte 2 (em andamento):** evoluir o monólito para uma **arquitetura de microsserviços** e ajustar os serviços de impostos e descontos — ver seção [🧭 Parte 2](#-parte-2--arquitetura-de-microsserviços).
+
+> 📄 Enunciados: Parte 1 em [enunciado.md](enunciado.md) · Parte 2 em [PAS_TF_2026_1_PizzariaP2.pdf](PAS_TF_2026_1_PizzariaP2.pdf).
 
 ---
 
@@ -49,18 +53,20 @@ Estrutura em pacotes seguindo Clean Architecture com 3 camadas isoladas:
 
 ```
 src/main/java/com/bcopstein/ex4_lancheriaddd_v1/
-├── Dominio/                # Regras de negócio puras (sem framework)
+├── Dominio/                # Regras de negócio (núcleo)
 │   ├── Entidades/          # Cliente, Pedido, Produto, Cardapio, ...
 │   ├── Dados/              # Interfaces de repositório
-│   └── Servicos/           # Interfaces (I*) + implementações de domínio
+│   └── Servicos/           # Serviços de domínio + interfaces (I*) dos serviços externos
 ├── Aplicacao/              # Casos de uso (orquestração) + DTOs
 │   ├── Requests/           # DTOs de entrada
 │   └── Responses/          # DTOs de saída
 └── Adaptadores/            # Interface com o mundo externo
-    ├── Apresentacao/       # Controllers REST + presenters
-    ├── Dados/              # Implementações JDBC dos repositórios
-    └── Servicos/           # Fakes de serviços externos (estoque, pagamento)
+    ├── Apresentacao/       # Controllers REST + presenters + filtro de auth
+    ├── Dados/              # Implementações dos repositórios (Spring Data JPA)
+    └── Servicos/           # Serviços externos simulados/fakes (estoque, pagamento, cozinha, entrega, token de auth)
 ```
+
+> **Regra de dependência:** os casos de uso (Aplicacao) acessam os dados sempre por um **serviço de domínio** (`Dominio/Servicos`), nunca pelo repositório direto. Os serviços externos simulados/fakes têm interface no domínio (`I*`) e implementação trocável em `Adaptadores/Servicos`.
 
 Diagramas PlantUML na raiz: [Dominio.puml](Dominio.puml), [Atores.puml](Atores.puml), [ContextoC1.puml](ContextoC1.puml), [DrgClasses4camadas.puml](DrgClasses4camadas.puml), [OrganizacaoEmPacotes.puml](OrganizacaoEmPacotes.puml).
 
@@ -115,7 +121,7 @@ NOVO ──(estoque OK)──▶ APROVADO ──(pagamento)──▶ PAGO
                                                 ENTREGUE
 ```
 
-Cozinha e Entrega são serviços **simulados** ([CozinhaService](src/main/java/com/bcopstein/ex4_lancheriaddd_v1/Dominio/Servicos/CozinhaService.java) / [EntregaService](src/main/java/com/bcopstein/ex4_lancheriaddd_v1/Dominio/Servicos/EntregaService.java)) que avançam o status no banco a cada 2 segundos via `ScheduledExecutorService`.
+Cozinha e Entrega são serviços **simulados** ([CozinhaService](src/main/java/com/bcopstein/ex4_lancheriaddd_v1/Adaptadores/Servicos/CozinhaService.java) / [EntregaService](src/main/java/com/bcopstein/ex4_lancheriaddd_v1/Adaptadores/Servicos/EntregaService.java)) que avançam o status no banco a cada 2 segundos via `ScheduledExecutorService`.
 
 ---
 
@@ -176,6 +182,87 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/cardapio/1
 
 Sem token (ou com token inválido/expirado) a resposta é **HTTP 401** com `{"erro":"..."}`.
 Endpoints abertos: `POST /clientes` (UC1), `POST /auth` (UC2), `GET /pedidos/entregues*` (UC8/UC9), Swagger e H2 Console.
+
+---
+
+## 🧭 Parte 2 — Arquitetura de Microsserviços
+
+A Parte 2 tem dois objetivos: **(1)** comprovar as vantagens da arquitetura limpa na manutenção e **(2)** transformar o monólito numa **arquitetura de microsserviços** conteinerizada. O acesso passa por um **gateway** que se registra num **name server**.
+
+### 🏗️ Arquitetura-alvo
+
+```
+            Cliente / Cozinha / Administrador / Entregador
+                              │ HTTP(S) (auth no gateway)
+                    ┌─────────▼─────────┐
+                    │  Spring Cloud     │   ← autenticação fica AQUI
+                    │     Gateway       │
+                    └─────────┬─────────┘
+        roteamento ┌──────────┼───────────────┐
+                   ▼          ▼                ▼
+        ┌──────────────┐  ┌──────────┐   ┌─────────────────┐
+        │ Serviço de   │  │ Serviço  │   │ Módulo de       │
+        │ Pizzaria     │─▶│ de       │   │ Entregas        │
+        │ (monólito P1)│  │ Estoque  │   │ (≥3 instâncias) │
+        └──────┬───────┘  │ (JPA,    │   └────────▲────────┘
+               │ REST     │ BD próprio)│           │ consome fila
+               │ síncrono └────┬─────┘             │
+               │ publica       ▼ BD Estoque   ┌────┴─────┐
+               │ entrega ─────────────────────▶│ RabbitMQ │
+               │                               └──────────┘
+               └──────────────┬──────────────────────────┐
+                              ▼                            ▼
+                        BD Pizzaria              Eureka (Name Server)
+                                              (registro/descoberta de todos)
+```
+
+| Microsserviço | Papel | Pontos obrigatórios |
+|---------------|-------|---------------------|
+| **Name Server** | Descoberta de serviços | Eureka (Spring Cloud) |
+| **Gateway** | Ponto único de entrada | Spring Cloud Gateway **+ autenticação** (migrada do serviço de pizzaria) |
+| **Serviço de Pizzaria** | Monólito da Parte 1 ajustado | Auth **removida** daqui |
+| **Serviço de Estoque** | Estoque isolado, BD próprio | **JPA obrigatório**, comunicação **síncrona (REST)** com a pizzaria, inclui **bebidas** |
+| **Módulo de Entregas** | Entregas (segue simulado) | Recebe via **fila RabbitMQ**, **≥3 instâncias** competindo na **mesma fila** |
+| **RabbitMQ** | Broker de mensagens | Entre pizzaria e entregas |
+
+Cada microsserviço é **conteinerizado** e registrado no Eureka. Escalar instâncias:
+`docker compose up --scale entregas=3` (no `compose.yaml`, mapear **só a porta interna**, ex.: `ports: ["8000"]`).
+
+### ✅ Casos de Uso (renumerados na Parte 2)
+
+| UC | Ator | Descrição |
+|----|------|-----------|
+| UC1 | Adm | Listar cardápios disponíveis |
+| UC2 | Adm | **Definir o cardápio corrente** *(novo)* |
+| UC3 | Adm | **Listar as políticas de desconto disponíveis** *(novo)* |
+| UC4 | Adm | **Definir a política de desconto corrente** *(novo — via endpoint)* |
+| UC5 | Cliente | Carregar cardápio |
+| UC6 | Cliente | Submeter pedido para aprovação |
+| UC7 | Cliente | Solicitar status de pedido |
+| UC8 | Cliente | Cancelar pedido (aprovado, não pago) |
+| UC9 | Cliente | Pagar pedido (registra estado + data/hora das mudanças) |
+| UC10 | Cliente | Listar pedidos entregues entre duas datas |
+| UC11 | Anônimo | Cadastrar usuário |
+| UC12 | Usuário | Entrar no sistema (autenticação) |
+
+### 🧮 Impostos e Descontos (SRP + OCP)
+
+- **Impostos:** ao menos **2 formas de cálculo**. A forma corrente é escolhida por **variável de ambiente**. Cada imposto é identificado pela `String` do número da lei.
+- **Descontos:** ao menos **3 formas de cálculo**. A política corrente é definida por um **endpoint específico** (UC4). Cada desconto é identificado por um `código` (ex.: `"PromocaoVerao"`, `"PromocaoDiaDosPais"`).
+- Ambos projetados para **trocar a fórmula com frequência sem impactar o resto** — sem hardcode da estratégia corrente.
+
+### 📅 Cronograma (Parte 2)
+
+| Data | Entrega |
+|------|---------|
+| 10/06/2026 | Definição do trabalho — estudo de caso rodando |
+| 15/06/2026 | Monólito conteinerizado atrás de gateway + name server, com auth no gateway |
+| 17/06/2026 | Ajustes nos casos de uso e nos serviços de impostos e descontos |
+| 22/06/2026 | Microsserviço de estoque isolado + entregas via fila; **JPA real no estoque** (não mais simulado) |
+| 29/06/2026 | Múltiplas instâncias dos microsserviços; load balancer funcionando |
+| 01/07/2026 | **Apresentação do trabalho** |
+
+> 📦 Entrega final: `.zip` com todos os fontes no Moodle. Apresentação na data é **obrigatória**.
 
 ---
 
