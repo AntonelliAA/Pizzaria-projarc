@@ -1,4 +1,4 @@
-package com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos;
+package com.bcopstein.ex4_lancheriaddd_v1.Adaptadores.Servicos;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -8,10 +8,13 @@ import org.springframework.stereotype.Service;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.PedidosRepository;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.ICozinhaService;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IEntregaService;
 
 /**
  * Implementação simulada (assíncrona) do setor da cozinha.
  * Atualiza o status do pedido no banco de dados e avança para entrega.
+ * Adaptador de serviço externo — trocável pela implementação real via {@link ICozinhaService}.
  */
 @Service
 public class CozinhaService implements ICozinhaService {
@@ -49,18 +52,11 @@ public class CozinhaService implements ICozinhaService {
         scheduler.schedule(() -> pedidoPronto(id), 2, TimeUnit.SECONDS);
     }
 
-    @Override
-    public void pedidoPronto() {
-        // Implementação obrigatória da interface, mas a simulação por ID é usada internamente.
-    }
-
     private void pedidoPronto(Long id) {
         pedidosRepo.atualizaStatus(id, Pedido.Status.PRONTO);
         System.out.println("Cozinha: Pedido " + id + " finalizado (PRONTO)");
 
         // Envia para o setor de entregas
-        pedidosRepo.recuperaPorId(id).ifPresent(p -> {
-            entregaService.chegadaDePedido(p);
-        });
+        pedidosRepo.recuperaPorId(id).ifPresent(entregaService::chegadaDePedido);
     }
 }

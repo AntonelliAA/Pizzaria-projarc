@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.AuthTokenService;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IAuthTokenService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,7 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Filtro que protege os endpoints marcados como 🔒 no enunciado (UC3–UC7).
  *
  * Espera o header "Authorization: Bearer <token>" com um token válido
- * emitido pelo {@link AuthTokenService} no login (UC2).
+ * emitido pelo {@link IAuthTokenService} no login (UC2).
  *
  * Endpoints abertos (não passam pelo check): UC1 (POST /clientes),
  * UC2 (POST /auth), UC8/UC9 (GET /pedidos/entregues*), raiz, swagger, h2.
@@ -28,9 +28,9 @@ public class AuthFilter extends OncePerRequestFilter {
     private static final Pattern PEDIDO_PROTEGIDO =
             Pattern.compile("^/pedidos/\\d+/(status|cancelar|pagar)$");
 
-    private final AuthTokenService tokens;
+    private final IAuthTokenService tokens;
 
-    public AuthFilter(AuthTokenService tokens) {
+    public AuthFilter(IAuthTokenService tokens) {
         this.tokens = tokens;
     }
 

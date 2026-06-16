@@ -10,16 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.ItemPedidoRequest;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.PedidoRequest;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.ClientesRepository;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.PedidosRepository;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.ProdutosRepository;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Cliente;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.ItemPedido;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Produto;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.ClienteService;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IDescontosService;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IEstoqueService;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IImpostosService;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.PedidoService;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.ProdutoService;
 
 /**
  * UC4 — Submeter pedido para aprovação.
@@ -36,29 +36,29 @@ import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IImpostosService;
 @Transactional
 public class CriaPedidoUC {
 
-    private final ProdutosRepository produtosRepo;
-    private final ClientesRepository clientesRepo;
-    private final PedidosRepository pedidosRepo;
+    private final ProdutoService produtoService;
+    private final ClienteService clienteService;
+    private final PedidoService pedidoService;
     private final IEstoqueService estoqueService;
     private final IImpostosService impostosService;
     private final IDescontosService descontosService;
 
-    public CriaPedidoUC(ProdutosRepository produtosRepo,
-                        ClientesRepository clientesRepo,
-                        PedidosRepository pedidosRepo,
+    public CriaPedidoUC(ProdutoService produtoService,
+                        ClienteService clienteService,
+                        PedidoService pedidoService,
                         IEstoqueService estoqueService,
                         IImpostosService impostosService,
                         IDescontosService descontosService) {
-        this.produtosRepo = produtosRepo;
-        this.clientesRepo = clientesRepo;
-        this.pedidosRepo = pedidosRepo;
+        this.produtoService = produtoService;
+        this.clienteService = clienteService;
+        this.pedidoService = pedidoService;
         this.estoqueService = estoqueService;
         this.impostosService = impostosService;
         this.descontosService = descontosService;
     }
 
     public Pedido run(PedidoRequest req) {
-        Cliente cliente = clientesRepo.recuperaPorCpf(req.getClienteCpf())
+        Cliente cliente = clienteService.recuperaPorCpf(req.getClienteCpf())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Cliente não encontrado: " + req.getClienteCpf()));
 
@@ -94,12 +94,12 @@ public class CriaPedidoUC {
                 desconto,
                 valorCobrado
         );
-        return pedidosRepo.salva(pedidoAprovado);
+        return pedidoService.salva(pedidoAprovado);
     }
 
     private List<ItemPedido> montaItens(List<ItemPedidoRequest> requests) {
         return requests.stream().map(ipr -> {
-            Produto p = produtosRepo.recuperaProdutoPorid(ipr.getProdutoId());
+            Produto p = produtoService.recuperaProdutoPorId(ipr.getProdutoId());
             if (p == null) throw new IllegalArgumentException(
                     "Produto não encontrado: " + ipr.getProdutoId());
             return new ItemPedido(p, ipr.getQuantidade());
@@ -121,7 +121,7 @@ public class CriaPedidoUC {
                 .filter(item -> indisponiveis.contains(item.getItem().getDescricao()))
                 .forEach(item -> {
                     item.getItem().marcarComoIndisponivel();
-                    produtosRepo.marcaComoIndisponivel(item.getItem().getId());
+                    produtoService.marcaComoIndisponivel(item.getItem().getId());
                 });
     }
 

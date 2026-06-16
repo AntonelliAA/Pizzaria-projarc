@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.PedidoEntregueResponse;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.PedidosRepository;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.PedidoService;
 
 /**
  * UC8 — Listar pedidos entregues entre duas datas.
@@ -19,10 +19,10 @@ import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
 @Service
 public class ListaPedidosEntreguesUC {
 
-    private final PedidosRepository pedidosRepo;
+    private final PedidoService pedidoService;
 
-    public ListaPedidosEntreguesUC(PedidosRepository pedidosRepo) {
-        this.pedidosRepo = pedidosRepo;
+    public ListaPedidosEntreguesUC(PedidoService pedidoService) {
+        this.pedidoService = pedidoService;
     }
 
     public List<PedidoEntregueResponse> run(LocalDateTime inicio, LocalDateTime fim) {
@@ -33,7 +33,7 @@ public class ListaPedidosEntreguesUC {
             throw new IllegalArgumentException("Data de início não pode ser posterior à data fim");
         }
 
-        List<Pedido> pedidos = pedidosRepo.recuperaEntreguesEntreDatas(inicio, fim);
+        List<Pedido> pedidos = pedidoService.recuperaEntreguesEntreDatas(inicio, fim);
 
         return pedidos.stream()
                 .map(PedidoEntregueResponse::new)

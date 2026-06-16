@@ -4,10 +4,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.StatusPedidoResponse;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.PedidosRepository;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.ICozinhaService;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IPagamentoService;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.PedidoService;
 
 /**
  * UC7 — Pagar pedido.
@@ -20,20 +20,20 @@ import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IPagamentoService;
 @Transactional
 public class PagarPedidoUC {
 
-    private final PedidosRepository pedidosRepo;
+    private final PedidoService pedidoService;
     private final IPagamentoService pagamentoService;
     private final ICozinhaService cozinhaService;
 
-    public PagarPedidoUC(PedidosRepository pedidosRepo,
+    public PagarPedidoUC(PedidoService pedidoService,
                          IPagamentoService pagamentoService,
                          ICozinhaService cozinhaService) {
-        this.pedidosRepo = pedidosRepo;
+        this.pedidoService = pedidoService;
         this.pagamentoService = pagamentoService;
         this.cozinhaService = cozinhaService;
     }
 
     public StatusPedidoResponse run(Long pedidoId) {
-        Pedido p = pedidosRepo.recuperaPorId(pedidoId)
+        Pedido p = pedidoService.recuperaPorId(pedidoId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Pedido não encontrado: " + pedidoId));
 
@@ -47,7 +47,7 @@ public class PagarPedidoUC {
             throw new IllegalStateException("Falha no processamento do pagamento para o pedido: " + pedidoId);
         }
 
-        pedidosRepo.atualizaStatus(pedidoId, Pedido.Status.PAGO);
+        pedidoService.atualizaStatus(pedidoId, Pedido.Status.PAGO);
 
         // Encaminha para cozinha
         cozinhaService.chegadaDePedido(p);

@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.StatusPedidoResponse;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.PedidosRepository;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.PedidoService;
 
 /**
  * UC6 — Cancelar pedido.
@@ -17,14 +17,14 @@ import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
 @Transactional
 public class CancelaPedidoUC {
 
-    private final PedidosRepository pedidosRepo;
+    private final PedidoService pedidoService;
 
-    public CancelaPedidoUC(PedidosRepository pedidosRepo) {
-        this.pedidosRepo = pedidosRepo;
+    public CancelaPedidoUC(PedidoService pedidoService) {
+        this.pedidoService = pedidoService;
     }
 
     public StatusPedidoResponse run(Long pedidoId) {
-        Pedido p = pedidosRepo.recuperaPorId(pedidoId)
+        Pedido p = pedidoService.recuperaPorId(pedidoId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Pedido não encontrado: " + pedidoId));
 
@@ -33,7 +33,7 @@ public class CancelaPedidoUC {
                     "Pedido " + pedidoId + " não pode ser cancelado — status atual: " + p.getStatus());
         }
 
-        pedidosRepo.atualizaStatus(pedidoId, Pedido.Status.CANCELADO);
+        pedidoService.atualizaStatus(pedidoId, Pedido.Status.CANCELADO);
 
         return new StatusPedidoResponse(
                 p.getId(),

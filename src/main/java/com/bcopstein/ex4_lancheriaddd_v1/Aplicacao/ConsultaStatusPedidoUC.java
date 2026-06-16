@@ -3,8 +3,8 @@ package com.bcopstein.ex4_lancheriaddd_v1.Aplicacao;
 import org.springframework.stereotype.Service;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.StatusPedidoResponse;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Dados.PedidosRepository;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.PedidoService;
 
 /**
  * UC5 — Solicitar status de pedido.
@@ -15,14 +15,14 @@ import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Pedido;
 @Service
 public class ConsultaStatusPedidoUC {
 
-    private final PedidosRepository pedidosRepo;
+    private final PedidoService pedidoService;
 
-    public ConsultaStatusPedidoUC(PedidosRepository pedidosRepo) {
-        this.pedidosRepo = pedidosRepo;
+    public ConsultaStatusPedidoUC(PedidoService pedidoService) {
+        this.pedidoService = pedidoService;
     }
 
     public StatusPedidoResponse run(Long pedidoId) {
-        Pedido p = pedidosRepo.recuperaPorId(pedidoId)
+        Pedido p = pedidoService.recuperaPorId(pedidoId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Pedido não encontrado: " + pedidoId));
 
