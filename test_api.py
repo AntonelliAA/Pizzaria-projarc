@@ -233,22 +233,22 @@ def main():
     if auth_resp:
         print(f"{C.DIM}       ↳ Token: {auth_resp.get('token', '')[:20]}...{C.RESET}")
 
-    # Autenticar com credenciais inválidas → 400
+    # Autenticar com credenciais inválidas → 401 (auth agora é no gateway)
     test(
-        "POST /auth — Senha incorreta → 400",
+        "POST /auth — Senha incorreta → 401",
         "POST", "/auth",
         body={"email": email_novo, "senha": "senhaErrada"},
-        expected_status=400,
-        description="Senha incorreta deve retornar 400"
+        expected_status=401,
+        description="Senha incorreta deve retornar 401 (gateway)"
     )
 
-    # Autenticar com e-mail inexistente → 400
+    # Autenticar com e-mail inexistente → 401 (auth agora é no gateway)
     test(
-        "POST /auth — E-mail inexistente → 400",
+        "POST /auth — E-mail inexistente → 401",
         "POST", "/auth",
         body={"email": "naoexiste@email.com", "senha": "qualquer"},
-        expected_status=400,
-        description="E-mail não cadastrado deve retornar 400"
+        expected_status=401,
+        description="E-mail não cadastrado deve retornar 401 (gateway)"
     )
 
     # Autenticar clientes pré-existentes (data.sql) usando senha plain-text

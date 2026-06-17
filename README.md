@@ -23,27 +23,48 @@ O trabalho tem duas partes:
 
 ## 🚀 Como executar
 
-### Opção A — Docker (recomendado)
+> A partir da Parte 2 o sistema é composto por **3 serviços** (Eureka + Gateway + Pizzaria).
+> O acesso externo é **somente pelo gateway** em `http://localhost:8080`.
+
+### Opção A — Docker Compose (recomendado)
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-A aplicação sobe em `http://localhost:8080`.
+Sobe Eureka (`:8761`), o serviço de pizzaria (interno, `:8081`) e o gateway (`:8080`).
 
-### Opção B — Maven local
+### Opção B — Maven local (3 terminais, exige JDK 21)
 
 ```bash
-./mvnw spring-boot:run
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+cd eureka-server    && ./mvnw spring-boot:run   # :8761
+cd pizzaria-service && ./mvnw spring-boot:run   # :8081
+cd gateway          && ./mvnw spring-boot:run   # :8080
 ```
 
 ### Acessar
 
 | Recurso | URL |
 |---------|-----|
-| API base | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| Console H2 | http://localhost:8080/h2 (jdbc: `jdbc:h2:mem:testdb`, user `sa`, sem senha) |
+| API (via gateway) | http://localhost:8080 |
+| Dashboard Eureka | http://localhost:8761 |
+| Swagger UI (pizzaria) | http://localhost:8080/docs |
+| Console H2 (pizzaria) | http://localhost:8081/h2 (jdbc: `jdbc:h2:mem:pizzadb`, user `sa`, sem senha) |
+
+### Autenticação (no gateway)
+
+```bash
+# login (UC12) — devolve um JWT
+TOKEN=$(curl -s -X POST http://localhost:8080/auth \
+  -H "Content-Type: application/json" \
+  -d '{"email":"huguinho.pato@email.com","senha":"senha"}' | jq -r .token)
+
+# rota protegida com o JWT
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/cardapio/1
+```
+
+Rotas abertas: `POST /clientes` (cadastro), `POST /auth` (login), Swagger. As demais exigem `Authorization: Bearer <jwt>` — sem token, o gateway responde **401**.
 
 ---
 
