@@ -19,4 +19,10 @@ class RotasPublicasTest {
         assertFalse(RotasPublicas.ehPublica(HttpMethod.GET, "/pedidos/1/status"));
         assertFalse(RotasPublicas.ehPublica(HttpMethod.GET, "/cardapio/1"));
     }
+
+    @Test
+    void listagemDeEntreguesEhPublica() {
+        assertTrue(RotasPublicas.ehPublica(HttpMethod.GET, "/pedidos/entregues"));
+        assertTrue(RotasPublicas.ehPublica(HttpMethod.GET, "/pedidos/entregues/9001"));
+    }
 }
