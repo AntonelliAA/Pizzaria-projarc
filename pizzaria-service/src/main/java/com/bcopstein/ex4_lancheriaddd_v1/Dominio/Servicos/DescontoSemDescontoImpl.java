@@ -1,9 +1,8 @@
-package com.bcopstein.ex4_lancheriaddd_v1.Adaptadores.Servicos;
+package com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos;
 
 import org.springframework.stereotype.Service;
 
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Cliente;
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IDescontosService;
 
 /**
  * Estratégia de nenhum desconto.
