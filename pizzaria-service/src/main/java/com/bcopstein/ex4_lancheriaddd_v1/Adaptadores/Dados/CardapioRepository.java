@@ -36,4 +36,21 @@ public interface CardapioRepository extends JpaRepository<Cardapio, Long>, com.b
             .map(cardapio -> cardapio.getProdutos().isEmpty() ? List.<Produto>of() : List.of(cardapio.getProdutos().getFirst()))
             .orElse(List.of());
     }
+
+    @Override
+    default List<Cardapio> recuperaTodos() {
+        return findAll();
+    }
+
+    @Override
+    default Optional<Cardapio> recuperaCorrente() {
+        return findAll().stream()
+            .filter(Cardapio::isCorrente)
+            .findFirst();
+    }
+
+    @Override
+    default Cardapio salva(Cardapio cardapio) {
+        return save(cardapio);
+    }
 }

@@ -52,8 +52,9 @@ INSERT INTO produto_receita (produto_id,receita_id) VALUES(2,2);
 INSERT INTO produto_receita (produto_id,receita_id) VALUES(3,3);
 
 -- Insercao dos cardapios
-INSERT INTO cardapios (id,titulo) VALUES(1,'Cardapio de Agosto');
-INSERT INTO cardapios (id,titulo) VALUES(2,'Cardapio de Setembro');
+-- Cardápio de Agosto é o corrente (true)
+INSERT INTO cardapios (id,titulo,corrente) VALUES(1,'Cardapio de Agosto', true);
+INSERT INTO cardapios (id,titulo,corrente) VALUES(2,'Cardapio de Setembro', false);
 
 -- Associação dos cardapios com os produtos
 INSERT INTO cardapio_produto (cardapio_id,produto_id) VALUES (1,1);

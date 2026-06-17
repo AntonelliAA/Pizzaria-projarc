@@ -29,6 +29,17 @@ logging:
       hibernate: INFO
     com:
       bcopstein: DEBUG
+<<<<<<< Updated upstream:pizzaria-service/src/main/resources/application.yaml
+=======
+
+# Configuração de política de desconto (Part 2)
+# Valores: fidelidade, promocao_verao, sem_desconto
+desconto:
+  politica: fidelidade
+
+application:
+  name: ex4-lancheriaddd-v1
+>>>>>>> Stashed changes:src/main/resources/application.yaml
 server:
   port: 8081
 

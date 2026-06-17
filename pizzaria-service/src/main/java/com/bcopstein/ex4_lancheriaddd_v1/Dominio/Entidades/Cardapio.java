@@ -15,6 +15,7 @@ public class Cardapio {
     @Id
     private long id;
     private String titulo;
+    private boolean corrente = false;
 
     @ManyToMany
     @JoinTable(
@@ -30,6 +31,7 @@ public class Cardapio {
         this.id = cabecalhoCardapio.id();
         this.titulo = cabecalhoCardapio.titulo();
         this.produtos = produtos;
+        this.corrente = false;
     }
 
     public long getId() {
@@ -38,6 +40,14 @@ public class Cardapio {
 
     public String getTitulo() {
         return titulo;
+    }
+
+    public boolean isCorrente() {
+        return corrente;
+    }
+
+    public void setCorrente(boolean corrente) {
+        this.corrente = corrente;
     }
 
     public CabecalhoCardapio getCabecalhoCardapio(){
