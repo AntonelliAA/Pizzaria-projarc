@@ -9,7 +9,7 @@ spring:
         - id: pizzaria
           uri: lb://pizzaria-service
           predicates:
-            - Path=/clientes/**,/cardapio/**,/pedidos/**,/docs/**,/swagger-ui/**,/v3/api-docs/**
+            - Path=/clientes/**,/cardapio/**,/pedidos/**,/admin/**,/docs/**,/swagger-ui/**,/v3/api-docs/**
 eureka:
   client:
     service-url:
