@@ -107,13 +107,7 @@ public class CriaPedidoUC {
     }
 
     private List<String> verificaEstoque(List<ItemPedido> itens) {
-        List<String> indisponiveis = new ArrayList<>();
-        for (ItemPedido item : itens) {
-            if (!estoqueService.verificaDisponibilidade(item.getItem(), item.getQuantidade())) {
-                indisponiveis.add(item.getItem().getDescricao());
-            }
-        }
-        return indisponiveis;
+        return estoqueService.verificaEDeduzEstoque(itens);
     }
 
     private void marcarProdutosIndisponiveis(List<ItemPedido> itens, List<String> indisponiveis) {

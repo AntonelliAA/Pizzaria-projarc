@@ -1,6 +1,7 @@
 package com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos;
 
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Produto;
+import java.util.List;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.ItemPedido;
 
 /**
  * Serviço de estoque — verifica se há ingredientes suficientes
@@ -8,5 +9,5 @@ import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Produto;
  * Permite troca futura por implementação real via injeção de dependência.
  */
 public interface IEstoqueService {
-    boolean verificaDisponibilidade(Produto produto, int quantidade);
+    List<String> verificaEDeduzEstoque(List<ItemPedido> itens);
 }

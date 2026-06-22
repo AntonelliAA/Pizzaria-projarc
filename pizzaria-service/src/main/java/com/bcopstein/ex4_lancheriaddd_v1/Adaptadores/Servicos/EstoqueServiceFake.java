@@ -1,22 +1,23 @@
 package com.bcopstein.ex4_lancheriaddd_v1.Adaptadores.Servicos;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.Produto;
+import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Entidades.ItemPedido;
 import com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos.IEstoqueService;
 
 /**
  * Implementação fake do serviço de estoque.
- * Responde sempre que o estoque é suficiente, conforme simplificação prevista no enunciado.
- * Troca futura pela implementação real via injeção de dependência (basta registrar outro @Service
- * com @Primary ou usar qualificador).
+ * Responde sempre que o estoque é suficiente.
  */
 @Service
 public class EstoqueServiceFake implements IEstoqueService {
 
     @Override
-    public boolean verificaDisponibilidade(Produto produto, int quantidade) {
+    public List<String> verificaEDeduzEstoque(List<ItemPedido> itens) {
         // Fake: estoque sempre disponível
-        return true;
+        return new ArrayList<>();
     }
 }

@@ -34,3 +34,14 @@ services:
     depends_on:
       eureka-server:
         condition: service_healthy
+
+  estoque-service:
+    build: ./estoque-service
+    container_name: estoque-service
+    environment:
+      EUREKA_URI: http://eureka-server:8761/eureka
+    expose:
+      - "8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
