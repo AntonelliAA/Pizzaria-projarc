@@ -1,15 +1,15 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2026-05-24T23:30:00.000Z",
-  "__export_source": "projarc-pizzaria:manual",
+  "__export_date": "2026-06-22T00:00:00.000Z",
+  "__export_source": "projarc-pizzaria:parte2",
   "resources": [
     {
       "_id": "wrk_pizzaria",
       "_type": "workspace",
       "parentId": null,
-      "name": "Pizzaria PAS 2026/1",
-      "description": "Coleção de requisições para a API da Pizzaria — UC1 a UC9.\n\nFluxo recomendado:\n1. Rode 'UC2 / Login 9001' para popular o token automaticamente.\n2. Os endpoints protegidos (UC3–UC7) já leem o token via response chaining.\n3. UC1, UC8 e UC9 não exigem token.",
+      "name": "Pizzaria PAS 2026/1 — Parte 2 (Gateway)",
+      "description": "Coleção da Parte 2 — tudo via GATEWAY (http://localhost:8080).\n\nFluxo: rode 'Login 9001' uma vez; os protegidos puxam o JWT automaticamente. Estoque é interno (REST entre pizzaria e estoque-service); entregas é assíncrono (RabbitMQ).",
       "scope": "collection"
     },
     {
@@ -20,211 +20,375 @@
       "data": {
         "base_url": "http://localhost:8080"
       },
-      "color": "#7e57c2",
+      "color": "#e0563f",
       "isPrivate": false
     },
-
-    { "_id": "fld_uc1", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC1 — Registrar Cliente", "metaSortKey": 100 },
-    { "_id": "fld_uc2", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC2 — Autenticar (login)", "metaSortKey": 200 },
-    { "_id": "fld_uc3", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC3 — Cardápio 🔒", "metaSortKey": 300 },
-    { "_id": "fld_uc4", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC4 — Submeter pedido 🔒", "metaSortKey": 400 },
-    { "_id": "fld_uc5", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC5 — Status do pedido 🔒", "metaSortKey": 500 },
-    { "_id": "fld_uc6", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC6 — Cancelar pedido 🔒", "metaSortKey": 600 },
-    { "_id": "fld_uc7", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC7 — Pagar pedido 🔒", "metaSortKey": 700 },
-    { "_id": "fld_uc8", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC8 — Entregues entre datas", "metaSortKey": 800 },
-    { "_id": "fld_uc9", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "UC9 — Entregues de um cliente", "metaSortKey": 900 },
-    { "_id": "fld_sanity", "_type": "request_group", "parentId": "wrk_pizzaria", "name": "Auth — Sanity checks (401)", "metaSortKey": 1000 },
-
     {
-      "_id": "req_uc1_register",
+      "_id": "fld_sistema",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "Sistema",
+      "metaSortKey": 100
+    },
+    {
+      "_id": "req_root",
       "_type": "request",
-      "parentId": "fld_uc1",
-      "name": "POST /clientes — Registrar novo cliente",
+      "parentId": "fld_sistema",
+      "name": "GET / — Boas-vindas (aberta)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/",
+      "metaSortKey": 110,
+      "headers": []
+    },
+    {
+      "_id": "fld_cadastro",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "UC11 — Cadastrar usuário",
+      "metaSortKey": 200
+    },
+    {
+      "_id": "req_cadastro",
+      "_type": "request",
+      "parentId": "fld_cadastro",
+      "name": "POST /clientes (aberta)",
       "method": "POST",
       "url": "{{ _.base_url }}/clientes",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 210,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"nome\": \"Novo Cliente\",\n  \"cpf\": \"12345\",\n  \"celular\": \"51999999999\",\n  \"endereco\": \"Rua Nova, 1\",\n  \"email\": \"novo.cliente@email.com\",\n  \"senha\": \"senha123\"\n}"
+        "text": "{\n  \"cpf\": \"5555\",\n  \"nome\": \"Maria Teste\",\n  \"celular\": \"99999\",\n  \"endereco\": \"Rua X, 10\",\n  \"email\": \"maria@email.com\",\n  \"senha\": \"senha\"\n}"
       }
     },
-
     {
-      "_id": "req_uc2_login_9001",
+      "_id": "fld_login",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "UC12 — Entrar no sistema (login)",
+      "metaSortKey": 300
+    },
+    {
+      "_id": "req_login_9001",
       "_type": "request",
-      "parentId": "fld_uc2",
+      "parentId": "fld_login",
       "name": "POST /auth — Login 9001 (Huguinho)",
       "method": "POST",
       "url": "{{ _.base_url }}/auth",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 310,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"huguinho.pato@email.com\",\n  \"senha\": \"senha\"\n}"
       },
-      "description": "Rode esta requisição primeiro — o token retornado é referenciado automaticamente por todos os endpoints protegidos via response chaining."
+      "description": "Rode primeiro. O gateway valida na pizzaria e emite o JWT; os protegidos puxam o token daqui."
     },
     {
-      "_id": "req_uc2_login_9002",
+      "_id": "req_login_9002",
       "_type": "request",
-      "parentId": "fld_uc2",
-      "name": "POST /auth — Login 9002 (Luizinho)",
+      "parentId": "fld_login",
+      "name": "POST /auth — Login 9002 (Zezinho)",
       "method": "POST",
       "url": "{{ _.base_url }}/auth",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 320,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"zezinho.pato@email.com\",\n  \"senha\": \"senha\"\n}"
       }
     },
     {
-      "_id": "req_uc2_login_invalid",
+      "_id": "req_login_bad",
       "_type": "request",
-      "parentId": "fld_uc2",
-      "name": "POST /auth — Senha incorreta (espera 400)",
+      "parentId": "fld_login",
+      "name": "POST /auth — Senha errada (espera 401)",
       "method": "POST",
       "url": "{{ _.base_url }}/auth",
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 330,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"huguinho.pato@email.com\",\n  \"senha\": \"errada\"\n}"
       }
     },
-
     {
-      "_id": "req_uc3_lista",
+      "_id": "fld_cardapio",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "UC5 — Carregar cardápio 🔒",
+      "metaSortKey": 400
+    },
+    {
+      "_id": "req_cardapio_1",
       "_type": "request",
-      "parentId": "fld_uc3",
-      "name": "GET /cardapio/lista — Lista de cardápios",
+      "parentId": "fld_cardapio",
+      "name": "GET /cardapio/1 🔒",
+      "method": "GET",
+      "url": "{{ _.base_url }}/cardapio/1",
+      "metaSortKey": 410,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ]
+    },
+    {
+      "_id": "req_cardapio_lista",
+      "_type": "request",
+      "parentId": "fld_cardapio",
+      "name": "GET /cardapio/lista 🔒",
       "method": "GET",
       "url": "{{ _.base_url }}/cardapio/lista",
+      "metaSortKey": 420,
       "headers": [
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
       ]
     },
     {
-      "_id": "req_uc3_corrente",
+      "_id": "fld_admin",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "UC1–UC4 — Administração 🔒",
+      "metaSortKey": 500
+    },
+    {
+      "_id": "req_admin_cardapios",
       "_type": "request",
-      "parentId": "fld_uc3",
-      "name": "GET /cardapio/1 — Cardápio corrente",
+      "parentId": "fld_admin",
+      "name": "UC1 — GET /admin/cardapios 🔒",
       "method": "GET",
-      "url": "{{ _.base_url }}/cardapio/1",
+      "url": "{{ _.base_url }}/admin/cardapios",
+      "metaSortKey": 510,
       "headers": [
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
-      ]
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "description": "Lista cardápios e indica o corrente."
     },
-
     {
-      "_id": "req_uc4_submeter",
+      "_id": "req_admin_define_card",
       "_type": "request",
-      "parentId": "fld_uc4",
-      "name": "POST /pedidos — Submeter pedido (9001)",
-      "method": "POST",
-      "url": "{{ _.base_url }}/pedidos",
+      "parentId": "fld_admin",
+      "name": "UC2 — PUT /admin/cardapios/definir-corrente 🔒",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/admin/cardapios/definir-corrente",
+      "metaSortKey": 520,
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
       ],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"clienteCpf\": \"9001\",\n  \"enderecoEntrega\": \"Rua das Flores, 100\",\n  \"itens\": [\n    { \"produtoId\": 1, \"quantidade\": 2 },\n    { \"produtoId\": 3, \"quantidade\": 1 }\n  ]\n}"
+        "text": "{\n  \"cardapioId\": 2\n}"
       }
     },
     {
-      "_id": "req_uc4_cliente_invalido",
+      "_id": "req_admin_politicas",
       "_type": "request",
-      "parentId": "fld_uc4",
-      "name": "POST /pedidos — Cliente inexistente (espera 400)",
-      "method": "POST",
-      "url": "{{ _.base_url }}/pedidos",
+      "parentId": "fld_admin",
+      "name": "UC3 — GET /admin/descontos/politicas 🔒",
+      "method": "GET",
+      "url": "{{ _.base_url }}/admin/descontos/politicas",
+      "metaSortKey": 530,
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "description": "Lista as 3 estratégias de desconto e a corrente."
+    },
+    {
+      "_id": "req_admin_define_desc",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "UC4 — PUT /admin/descontos/definir-corrente 🔒",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/admin/descontos/definir-corrente",
+      "metaSortKey": 540,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
       ],
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"clienteCpf\": \"0000\",\n  \"enderecoEntrega\": \"Rua X\",\n  \"itens\": [ { \"produtoId\": 1, \"quantidade\": 1 } ]\n}"
-      }
+        "text": "{\n  \"codigo\": \"promocao_verao\"\n}"
+      },
+      "description": "Troca a política de desconto corrente (codigo: fidelidade | promocao_verao | sem_desconto)."
     },
-
     {
-      "_id": "req_uc5_status",
+      "_id": "fld_pedidos",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "UC6–UC9 — Pedidos 🔒",
+      "metaSortKey": 600
+    },
+    {
+      "_id": "req_pedido_submeter",
       "_type": "request",
-      "parentId": "fld_uc5",
-      "name": "GET /pedidos/1/status — Status do pedido",
+      "parentId": "fld_pedidos",
+      "name": "UC6 — POST /pedidos 🔒",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pedidos",
+      "metaSortKey": 610,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"clienteCpf\": \"9001\",\n  \"enderecoEntrega\": \"Rua das Flores, 100\",\n  \"itens\": [\n    {\n      \"produtoId\": 1,\n      \"quantidade\": 2\n    },\n    {\n      \"produtoId\": 3,\n      \"quantidade\": 1\n    }\n  ]\n}"
+      },
+      "description": "Verifica estoque (REST -> estoque-service). Anote o id retornado."
+    },
+    {
+      "_id": "req_pedido_status",
+      "_type": "request",
+      "parentId": "fld_pedidos",
+      "name": "UC7 — GET /pedidos/1/status 🔒",
       "method": "GET",
       "url": "{{ _.base_url }}/pedidos/1/status",
+      "metaSortKey": 620,
       "headers": [
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
       ],
-      "description": "Troque o ID na URL pelo pedido que você quer consultar. Ex: o id devolvido pelo UC4."
+      "description": "Troque o id pelo do seu pedido. Após pagar, o status evolui até ENTREGUE (via RabbitMQ)."
     },
-
     {
-      "_id": "req_uc6_cancelar",
+      "_id": "req_pedido_cancelar",
       "_type": "request",
-      "parentId": "fld_uc6",
-      "name": "PUT /pedidos/{id}/cancelar — Cancelar pedido APROVADO",
+      "parentId": "fld_pedidos",
+      "name": "UC8 — PUT /pedidos/1/cancelar 🔒",
       "method": "PUT",
-      "url": "{{ _.base_url }}/pedidos/100/cancelar",
+      "url": "{{ _.base_url }}/pedidos/1/cancelar",
+      "metaSortKey": 630,
       "headers": [
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
-      ],
-      "description": "Funciona apenas em pedidos com status APROVADO. Substitua 100 pelo id real."
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
+      ]
     },
-
     {
-      "_id": "req_uc7_pagar",
+      "_id": "req_pedido_pagar",
       "_type": "request",
-      "parentId": "fld_uc7",
-      "name": "PUT /pedidos/{id}/pagar — Pagar pedido APROVADO",
+      "parentId": "fld_pedidos",
+      "name": "UC9 — PUT /pedidos/1/pagar 🔒",
       "method": "PUT",
-      "url": "{{ _.base_url }}/pedidos/100/pagar",
+      "url": "{{ _.base_url }}/pedidos/1/pagar",
+      "metaSortKey": 640,
       "headers": [
-        { "name": "Authorization", "value": "Bearer {% response 'body', 'req_uc2_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {% response 'body', 'req_login_9001', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+        }
       ],
-      "description": "Apenas pedidos APROVADO podem ser pagos. Após o pagamento, a cozinha/entrega simulam transições assíncronas: AGUARDANDO → PREPARACAO → PRONTO → TRANSPORTE → ENTREGUE (≈2s por etapa). Acompanhe via UC5."
+      "description": "Paga; envia para cozinha; ao ficar PRONTO publica na fila e o entregas-service conclui."
     },
-
     {
-      "_id": "req_uc8_entregues",
+      "_id": "fld_entregues",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "UC10 — Pedidos entregues (abertas)",
+      "metaSortKey": 700
+    },
+    {
+      "_id": "req_entregues",
       "_type": "request",
-      "parentId": "fld_uc8",
-      "name": "GET /pedidos/entregues — Listar entregues (mai/2026)",
+      "parentId": "fld_entregues",
+      "name": "GET /pedidos/entregues?inicio&fim",
       "method": "GET",
       "url": "{{ _.base_url }}/pedidos/entregues?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
-      "headers": [],
-      "description": "Endpoint público (não exige token). Datas no formato ISO yyyy-MM-ddTHH:mm:ss."
-    },
-
-    {
-      "_id": "req_uc9_entregues_cliente",
-      "_type": "request",
-      "parentId": "fld_uc9",
-      "name": "GET /pedidos/entregues/9001 — Entregues do cliente",
-      "method": "GET",
-      "url": "{{ _.base_url }}/pedidos/entregues/9001?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
-      "headers": [],
-      "description": "Endpoint público. Troque 9001 pelo CPF desejado."
-    },
-
-    {
-      "_id": "req_sanity_sem_token",
-      "_type": "request",
-      "parentId": "fld_sanity",
-      "name": "GET /cardapio/1 — SEM token (espera 401)",
-      "method": "GET",
-      "url": "{{ _.base_url }}/cardapio/1",
+      "metaSortKey": 710,
       "headers": []
     },
     {
-      "_id": "req_sanity_token_invalido",
+      "_id": "req_entregues_cli",
+      "_type": "request",
+      "parentId": "fld_entregues",
+      "name": "GET /pedidos/entregues/9001?inicio&fim",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pedidos/entregues/9001?inicio=2026-05-01T00:00:00&fim=2026-05-31T23:59:59",
+      "metaSortKey": 720,
+      "headers": []
+    },
+    {
+      "_id": "fld_sanity",
+      "_type": "request_group",
+      "parentId": "wrk_pizzaria",
+      "name": "Auth — Sanity (401)",
+      "metaSortKey": 800
+    },
+    {
+      "_id": "req_sanity_sem",
       "_type": "request",
       "parentId": "fld_sanity",
-      "name": "GET /cardapio/1 — Token inválido (espera 401)",
+      "name": "GET /cardapio/1 SEM token (espera 401)",
       "method": "GET",
       "url": "{{ _.base_url }}/cardapio/1",
+      "metaSortKey": 810,
+      "headers": []
+    },
+    {
+      "_id": "req_sanity_falso",
+      "_type": "request",
+      "parentId": "fld_sanity",
+      "name": "GET /cardapio/1 token falso (espera 401)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/cardapio/1",
+      "metaSortKey": 820,
       "headers": [
-        { "name": "Authorization", "value": "Bearer token-falsificado-zzz" }
+        {
+          "name": "Authorization",
+          "value": "Bearer token-falsificado-zzz"
+        }
       ]
     }
   ]

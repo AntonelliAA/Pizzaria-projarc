@@ -32,7 +32,7 @@ O trabalho tem duas partes:
 docker compose up --build
 ```
 
-Sobe Eureka (`:8761`), o serviço de pizzaria (interno, `:8081`) e o gateway (`:8080`).
+Sobe Eureka (`:8761`), pizzaria (interno `:8081`), **estoque** (interno `:8082`), **RabbitMQ** (`:5672`/`:15672`), **entregas** (3 instâncias) e o gateway (`:8080`). Veja o [guia de demonstração](DEMONSTRACAO.md) para o passo a passo de teste.
 
 ### Opção B — Maven local (3 terminais, exige JDK 21)
 
