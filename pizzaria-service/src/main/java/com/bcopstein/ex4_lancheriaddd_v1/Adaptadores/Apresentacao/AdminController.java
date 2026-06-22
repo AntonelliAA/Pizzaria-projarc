@@ -14,8 +14,10 @@ import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.DefineCardapioCorrenteUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ListaCardapiosUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.ListaPoliticasDescontoUC;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.DefineCardapioCorrenteRequest;
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Requests.DefinePoliticaDescontoRequest;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.CardapioListaResponse;
 import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.ListaPoliticasDescontoResponse;
+import com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.Responses.PoliticaDescontoResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,14 +44,17 @@ public class AdminController {
     private final ListaCardapiosUC listaCardapiosUC;
     private final DefineCardapioCorrenteUC defineCardapioCorrenteUC;
     private final ListaPoliticasDescontoUC listaPoliticasDescontoUC;
+    private final com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.DefinePoliticaDescontoUC definePoliticaDescontoUC;
 
     public AdminController(
             ListaCardapiosUC listaCardapiosUC,
             DefineCardapioCorrenteUC defineCardapioCorrenteUC,
-            ListaPoliticasDescontoUC listaPoliticasDescontoUC) {
+            ListaPoliticasDescontoUC listaPoliticasDescontoUC,
+            com.bcopstein.ex4_lancheriaddd_v1.Aplicacao.DefinePoliticaDescontoUC definePoliticaDescontoUC) {
         this.listaCardapiosUC = listaCardapiosUC;
         this.defineCardapioCorrenteUC = defineCardapioCorrenteUC;
         this.listaPoliticasDescontoUC = listaPoliticasDescontoUC;
+        this.definePoliticaDescontoUC = definePoliticaDescontoUC;
     }
 
     /**
@@ -107,5 +112,29 @@ public class AdminController {
     public ResponseEntity<ListaPoliticasDescontoResponse> listaPoliticasDesconto() {
         ListaPoliticasDescontoResponse resultado = listaPoliticasDescontoUC.run();
         return ResponseEntity.ok(resultado);
+    }
+
+    /**
+     * UC4 — Definir a política de desconto corrente.
+     * Permite ao admin escolher qual política de desconto é ativa no momento.
+     */
+    @PutMapping("/descontos/definir-corrente")
+    @Operation(summary = "UC4 — Definir a política de desconto corrente",
+               description = "Define qual política de desconto será ativa a partir de agora")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Política de desconto definida como corrente",
+                     content = @Content(mediaType = "application/json",
+                                        schema = @Schema(implementation = PoliticaDescontoResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Código inválido ou desconhecido"),
+        @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
+    })
+    public ResponseEntity<PoliticaDescontoResponse> definePoliticaDesconto(
+            @Valid @RequestBody DefinePoliticaDescontoRequest req) {
+        try {
+            PoliticaDescontoResponse resultado = definePoliticaDescontoUC.run(req);
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

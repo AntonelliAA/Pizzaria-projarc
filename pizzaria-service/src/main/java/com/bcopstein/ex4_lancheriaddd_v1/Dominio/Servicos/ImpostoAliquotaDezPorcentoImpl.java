@@ -3,17 +3,21 @@ package com.bcopstein.ex4_lancheriaddd_v1.Dominio.Servicos;
 import org.springframework.stereotype.Service;
 
 /**
- * Implementação do serviço de impostos.
- * Regra atual: 10% sobre o somatório do custo dos itens.
- * Para alterar a fórmula basta modificar esta classe — o restante do sistema não é impactado.
+ * Implementação do serviço de impostos (10%).
  */
 @Service
-public class ImpostosServiceImpl implements IImpostosService {
+public class ImpostoAliquotaDezPorcentoImpl implements IImpostosService {
 
     private static final double ALIQUOTA = 0.10;
+    public static final String LEI = "Lei10Porcento";
 
     @Override
     public double calculaImposto(double valorBase) {
         return valorBase * ALIQUOTA;
+    }
+
+    @Override
+    public String getLei() {
+        return LEI;
     }
 }
