@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: entregas-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: 5672
+
+# Rodar em porta aleatória para permitir múltiplas instâncias locais facilmente
+server:
+  port: 0
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true

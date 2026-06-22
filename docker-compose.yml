@@ -57,3 +57,16 @@ services:
     depends_on:
       eureka-server:
         condition: service_healthy
+
+  entregas-service:
+    build: ./entregas-service
+    environment:
+      EUREKA_URI: http://eureka-server:8761/eureka
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    deploy:
+      replicas: 3
